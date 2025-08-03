@@ -5,16 +5,16 @@ from latin_1st_declension_a import words
 app = Flask(__name__)
 
 @app.route("/")
-def home():
-    # Pick a random word and quiz it simply
-    chosen_word = random.choice(words)
-    return f"What is the Latin for '{chosen_word['English']}'? Answer: {chosen_word['Latin']}"
+#def home():
+#    # Pick a random word and quiz it simply
+#    chosen_word = random.choice(words)
+#    return f"What is the Latin for '{chosen_word['English']}'? Answer: {chosen_word['Latin']}"
 
 
 import random
 from latin_1st_declension_a import words
 
-def quiz_user(words):
+def home(words):
     score = 0
     question_count = 0
 
@@ -86,7 +86,7 @@ def main():
     start = input()
     if start.lower() == 'q':
         return
-    quiz_user(words)  # Use words here
+    home(words)  # Use words here
 
 if __name__ == "__main__":
     main()
