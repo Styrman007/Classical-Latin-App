@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Latin Quiz</title>
+    <style>
+        body { font-family: Arial; padding: 2em; max-width: 600px; margin: auto; }
+        button { padding: 0.5em 1em; margin: 0.5em 0; }
+    </style>
+</head>
+<body>
+    <h1>Mis on ladina keeles: "{{ english }}"?</h1>
+
+    {% if result %}
+        <p><strong>{{ result }}</strong></p>
+    {% endif %}
+
+    <form method="POST">
+        {% for option in options %}
+            <button type="submit" name="answer" value="{{ option }}">{{ option }}</button><br>
+        {% endfor %}
+        <input type="hidden" name="correct" value="{{ correct }}">
+        <input type="hidden" name="english" value="{{ english }}">
+    </form>
+
+    <p><strong>Punktid:</strong> {{ score }}</p>
+</body>
+</html>
