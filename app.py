@@ -1,92 +1,65 @@
-from flask import Flask
+from flask import Flask, render_template, request, session, redirect
 import random
 from latin_1st_declension_a import words
 
 app = Flask(__name__)
+app.secret_key = "super-secret-key"  # needed for session
 
-@app.route("/")
-#def home():
-#    # Pick a random word and quiz it simply
-#    chosen_word = random.choice(words)
-#    return f"What is the Latin for '{chosen_word['English']}'? Answer: {chosen_word['Latin']}"
+@app.route("/", methods=["GET", "POST"])
+def quiz():
+    # First-time setup: session variables
+    if "score" not in session:
+        session["score"] = 0
+        session["streaks"] = {w["English"]: 0 for w in words}
+        session["locked"] = {}
 
+    streaks = session["streaks"]
+    locked = session["locked"]
 
-import random
-from latin_1st_declension_a import words
+    # Decrease lock counters
+    for key in list(locked.keys()):
+        locked[key] -= 1
+        if locked[key] <= 0:
+            del locked[key]
 
-def home(words):
-    score = 0
-    question_count = 0
-
-    streaks = {w['English']: 0 for w in words}      # consecutive correct answers per word
-    locked_words = {}                               # English word -> remaining questions to skip
-
-    while True:
-        # Decrement counters for locked words
-        for w in list(locked_words):
-            locked_words[w] -= 1
-            if locked_words[w] <= 0:
-                del locked_words[w]
-
-        # Filter words to those NOT locked
-        available_words = [w for w in words if w['English'] not in locked_words]
-        if not available_words:
-            print("No available words to quiz! Try again later.")
-            break
-
-        chosen_word = random.choice(available_words)
-        correct_latin = chosen_word['Latin']
-
-        # Get 3 random wrong answers
-        wrong_options = [w['Latin'] for w in words if w['Latin'] != correct_latin]
-        wrong_choices = random.sample(wrong_options, 3)
-
-        options = wrong_choices + [correct_latin]
-        random.shuffle(options)
-
-        print(f"Mis on ladina keeles '{chosen_word['English']}'?")
-        for i, option in enumerate(options, 1):
-            print(f"{i}. {option}")
-
-        user_input = input("Vali õige number (või 'q' väljumiseks): ").strip()
-        if user_input.lower() == 'q':
-            print(f"Lõpp! Sinu lõpp-punktid: {score}")
-            break
-
-        if not user_input.isdigit() or int(user_input) not in range(1, 5):
-            print("Palun sisesta number 1 kuni 4.\n")
-            continue
-
-        user_choice = options[int(user_input) - 1]
-        question_count += 1
-
-        if user_choice.lower() == correct_latin.lower():
-            print("Õige vastus!")
-            score += 1
-            # Increase streak for this word
-            streaks[chosen_word['English']] += 1
-            # Reset streak for others? (No, keep independent streaks)
-
-            # If streak reaches 5, lock the word for 50 questions
-            if streaks[chosen_word['English']] >= 3:
-                locked_words[chosen_word['English']] = 50
-                print(f"Võrratu! Sõna '{chosen_word['English']}' lukustatud järgmiste 50 küsimuse ajaks.\n")
-                streaks[chosen_word['English']] = 0  # reset streak after locking
-
-        else:
-            print(f"Vale vastus. Õige on '{correct_latin}'.\n")
-            # Reset streak for this word on mistake
-            streaks[chosen_word['English']] = 0
-
-        print(f"Sinu punktid: {score}\n")
+    # Handle POST (user clicked an answer)
+    result = None
+    if request.method == "POST":
+        user_answer = request.form["answer"]
+        correct = request.form["correct"]
+        english = request.form["english"]
         
-def main():
-    print("Welcome!")
-    print("Press Enter to start or 'q' to quit.")
-    start = input()
-    if start.lower() == 'q':
-        return
-    home(words)  # Use words here
+        if user_answer == correct:
+            result = "✅ Õige vastus!"
+            session["score"] += 1
+            streaks[english] += 1
+            if streaks[english] >= 3:
+                locked[english] = 50
+                streaks[english] = 0
+                result += f" Sõna '{english}' lukustatud 50 küsimuseks."
+        else:
+            result = f"❌ Vale. Õige oli: {correct}"
+            streaks[english] = 0
 
-if __name__ == "__main__":
-    main()
+        session["streaks"] = streaks
+        session["locked"] = locked
+
+    # Get available words
+    available_words = [w for w in words if w["English"] not in locked]
+    if not available_words:
+        return "Kõik sõnad on lukus! Proovi hiljem uuesti."
+
+    # Pick question
+    chosen = random.choice(available_words)
+    english = chosen["English"]
+    correct_latin = chosen["Latin"]
+    wrong_choices = [w["Latin"] for w in words if w["Latin"] != correct_latin]
+    options = random.sample(wrong_choices, 3) + [correct_latin]
+    random.shuffle(options)
+
+    return render_template("quiz.html",
+                           english=english,
+                           options=options,
+                           correct=correct_latin,
+                           result=result,
+                           score=session["score"])
