@@ -1,3 +1,6 @@
+from flask import Flask
+app = Flask(__name__)
+
 import random
 from latin_1st_declension_a import words
 
