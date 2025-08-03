@@ -1,3 +1,15 @@
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Hello World"
+
+if __name__ == "__main__":
+    app.run()
+
+
 import random
 from latin_1st_declension_a import words
 
