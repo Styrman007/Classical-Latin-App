@@ -1,13 +1,14 @@
 from flask import Flask
+import random
+from latin_1st_declension_a import words
 
 app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "Hello World"
-
-if __name__ == "__main__":
-    app.run()
+    # Pick a random word and quiz it simply
+    chosen_word = random.choice(words)
+    return f"What is the Latin for '{chosen_word['English']}'? Answer: {chosen_word['Latin']}"
 
 
 import random
